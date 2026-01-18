@@ -65,7 +65,7 @@ Repository ini merupakan **prerelease publik pertama** dari ide, konsep, arsitek
 
 ## 📐 Arsitektur & Workflow
 
-![GETOLS Workflow](assets/workflow.png)
+![GETOLS Workflow](assets/WorkFlow%20Getols.png)
 
 **Prinsip utama:**
 - Command (SSH/Telnet) → eksekusi & provisioning
