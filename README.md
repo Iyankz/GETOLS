@@ -1,1 +1,2 @@
 # GETOLS
+Bilingual README placeholder

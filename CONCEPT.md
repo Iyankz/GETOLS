@@ -1,0 +1,1 @@
+GETOLS Concept bilingual placeholder
