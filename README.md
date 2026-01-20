@@ -40,6 +40,33 @@ Repository ini merupakan **prerelease publik pertama** dari ide, konsep, arsitek
 
 ---
 
+## 🧠 Asal Nama GETOLS
+
+Nama **GETOLS** memiliki dua makna yang saling melengkapi: **makna budaya lokal** dan **makna teknis sistem**.
+
+### 🔹 Makna Bahasa Sunda
+Dalam bahasa Sunda, kata **getol** berarti:
+
+> **rajin, tekun, konsisten dalam bekerja**
+
+Makna ini mencerminkan filosofi GETOLS sebagai sistem yang:
+- Bekerja terus-menerus di belakang layar
+- Menangani pekerjaan operasional yang berulang
+- Mengurangi beban manual engineer
+- Membantu operator fokus pada pengambilan keputusan
+
+### 🔹 Makna Teknis
+Secara teknis, **GETOLS** merupakan singkatan dari:
+
+> **Gateway for Extended OLT Services**
+
+Huruf **S** di akhir GETOLS merepresentasikan:
+- Multi OLT
+- Multi vendor
+- Multi layanan
+
+---
+
 ## ✨ Fitur Utama (Level Konsep)
 
 - Gateway OLT multi-vendor (Huawei, ZTE, FiberHome, dll)
@@ -104,6 +131,8 @@ Pertama kali dipublikasikan: **Januari 2026**
 # 🇬🇧 Description (English)
 
 **GETOLS (Gateway for Extended OLT Services)** is an open-source gateway platform designed to unify and simplify **multi-vendor OLT and ONU operations** through a centralized, secure, and command-driven execution layer.
+
+The name **GETOLS** is inspired by the Sundanese word *getol*, which means **diligent, persistent, and consistently working**—reflecting the philosophy of a system that continuously operates behind the scenes to handle repetitive operational tasks.
 
 GETOLS provides:
 - A Telegram Bot for fast operational commands  
