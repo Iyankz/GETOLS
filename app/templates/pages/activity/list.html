@@ -1,0 +1,234 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Activity Log - GETOLS{% endblock %}
+
+{% block page_title %}Activity Log{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h2 class="card-title">Activity History</h2>
+    </div>
+    <div class="card-body">
+        <!-- Filters -->
+        <form method="get" action="/activity" class="filter-form">
+            <div class="filter-row">
+                <div class="form-group">
+                    <label for="action" class="form-label">Action Type</label>
+                    <select id="action" name="action" class="form-select">
+                        <option value="">All Actions</option>
+                        {% for action_type in action_types %}
+                        <option value="{{ action_type.value }}" {% if filters.action == action_type.value %}selected{% endif %}>
+                            {{ action_type.value|replace('_', ' ')|title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="success" class="form-label">Status</label>
+                    <select id="success" name="success" class="form-select">
+                        <option value="">All</option>
+                        <option value="true" {% if filters.success == 'true' %}selected{% endif %}>Success</option>
+                        <option value="false" {% if filters.success == 'false' %}selected{% endif %}>Failed</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="days" class="form-label">Time Period</label>
+                    <select id="days" name="days" class="form-select">
+                        <option value="1" {% if filters.days == 1 %}selected{% endif %}>Last 24 hours</option>
+                        <option value="7" {% if filters.days == 7 %}selected{% endif %}>Last 7 days</option>
+                        <option value="30" {% if filters.days == 30 %}selected{% endif %}>Last 30 days</option>
+                        <option value="90" {% if filters.days == 90 %}selected{% endif %}>Last 90 days</option>
+                    </select>
+                </div>
+                
+                <div class="form-group filter-actions">
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                    <a href="/activity" class="btn btn-outline">Clear</a>
+                </div>
+            </div>
+        </form>
+        
+        <!-- Statistics -->
+        {% if stats %}
+        <div class="stats-row mt-4">
+            <div class="stat-card">
+                <span class="stat-value">{{ stats.total_actions }}</span>
+                <span class="stat-label">Total Actions</span>
+            </div>
+            <div class="stat-card success">
+                <span class="stat-value">{{ stats.successful_actions }}</span>
+                <span class="stat-label">Successful</span>
+            </div>
+            <div class="stat-card danger">
+                <span class="stat-value">{{ stats.failed_actions }}</span>
+                <span class="stat-label">Failed</span>
+            </div>
+            <div class="stat-card info">
+                <span class="stat-value">{{ stats.unique_users }}</span>
+                <span class="stat-label">Active Users</span>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Results -->
+        {% if activities %}
+        <div class="table-responsive mt-4">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User</th>
+                        <th>Action</th>
+                        <th>Target</th>
+                        <th>Status</th>
+                        <th>IP Address</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activity in activities %}
+                    <tr>
+                        <td>
+                            <span class="timestamp">{{ activity.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar-sm">{{ activity.username[0]|upper }}</div>
+                                <div>
+                                    <span class="user-name">{{ activity.username }}</span>
+                                    <span class="user-role-sm">{{ activity.role }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="action-badge action-{{ activity.action.value.split('_')[0] }}">
+                                {{ activity.action_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if activity.target_name %}
+                            <span class="target-info">
+                                {{ activity.target_type|title }}: {{ activity.target_name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if activity.success %}
+                            <span class="badge badge-success">Success</span>
+                            {% else %}
+                            <span class="badge badge-danger">Failed</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="ip-address">{{ activity.ip_address or '-' }}</span>
+                        </td>
+                        <td>
+                            {% if activity.action_detail or activity.error_message %}
+                            <button 
+                                class="btn btn-sm btn-outline" 
+                                title="View Details"
+                                onclick="showActivityDetail({{ activity.id }})"
+                            >
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                </svg>
+                            </button>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if activities|length >= per_page %}
+        <div class="pagination mt-4">
+            {% if page > 1 %}
+            <a href="/activity?page={{ page - 1 }}&days={{ filters.days }}{% if filters.action %}&action={{ filters.action }}{% endif %}{% if filters.success %}&success={{ filters.success }}{% endif %}" class="btn btn-outline btn-sm">Previous</a>
+            {% endif %}
+            
+            <span class="pagination-info">Page {{ page }}</span>
+            
+            <a href="/activity?page={{ page + 1 }}&days={{ filters.days }}{% if filters.action %}&action={{ filters.action }}{% endif %}{% if filters.success %}&success={{ filters.success }}{% endif %}" class="btn btn-outline btn-sm">Next</a>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state mt-4">
+            <svg class="empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <h3>No Activity Found</h3>
+            <p>No activity logs match your filter criteria.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Activity Detail Modal -->
+<div id="activity-detail-modal" class="modal" style="display: none;">
+    <div class="modal-backdrop" onclick="hideActivityDetail()"></div>
+    <div class="modal-content modal-sm">
+        <div class="modal-header">
+            <h3>Activity Details</h3>
+            <button class="modal-close" onclick="hideActivityDetail()">&times;</button>
+        </div>
+        <div class="modal-body" id="activity-detail-content">
+            Loading...
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-primary" onclick="hideActivityDetail()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden data for each activity -->
+{% for activity in activities %}
+<div id="activity-data-{{ activity.id }}" style="display:none;" 
+     data-detail="{{ activity.action_detail|e if activity.action_detail else '' }}"
+     data-error="{{ activity.error_message|e if activity.error_message else '' }}"
+     data-user-agent="{{ activity.user_agent|e if activity.user_agent else '' }}">
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function showActivityDetail(activityId) {
+    const dataEl = document.getElementById('activity-data-' + activityId);
+    const detail = dataEl.dataset.detail;
+    const error = dataEl.dataset.error;
+    const userAgent = dataEl.dataset.userAgent;
+    
+    let content = '';
+    if (detail) {
+        content += '<div class="detail-section"><strong>Detail:</strong><p>' + detail + '</p></div>';
+    }
+    if (error) {
+        content += '<div class="detail-section error"><strong>Error:</strong><p class="text-danger">' + error + '</p></div>';
+    }
+    if (userAgent) {
+        content += '<div class="detail-section"><strong>User Agent:</strong><p class="text-muted small">' + userAgent + '</p></div>';
+    }
+    if (!content) {
+        content = '<p class="text-muted">No additional details available.</p>';
+    }
+    
+    document.getElementById('activity-detail-content').innerHTML = content;
+    document.getElementById('activity-detail-modal').style.display = 'flex';
+}
+
+function hideActivityDetail() {
+    document.getElementById('activity-detail-modal').style.display = 'none';
+}
+</script>
+{% endblock %}
