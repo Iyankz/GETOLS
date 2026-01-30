@@ -1,0 +1,234 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{% if mode == 'add' %}Add OLT{% else %}Edit OLT{% endif %} - GETOLS{% endblock %}
+
+{% block page_title %}{% if mode == 'add' %}Add New OLT{% else %}Edit OLT: {{ olt.name }}{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">OLT Configuration</h3>
+    </div>
+    <div class="card-body">
+        {% if error %}
+        <div class="alert alert-error">
+            <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+        
+        <form method="post" action="/olt/{% if mode == 'add' %}add{% else %}{{ olt.id }}/edit{% endif %}">
+            <div class="form-section">
+                <h4 class="form-section-title">Basic Information</h4>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="name" class="form-label">OLT Name *</label>
+                        <input type="text" id="name" name="name" class="form-input" 
+                               value="{{ form_data.name if form_data else (olt.name if olt else '') }}"
+                               placeholder="e.g., OLT-MAIN-01" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="olt_type" class="form-label">OLT Type *</label>
+                        <select id="olt_type" name="olt_type" class="form-select" required>
+                            <option value="">Select OLT Type</option>
+                            {% for type in olt_types %}
+                            <option value="{{ type.value }}" {% if (form_data and form_data.olt_type == type.value) or (olt and olt.olt_type == type) %}selected{% endif %}>
+                                {% if type.value == 'zte_c300' %}ZTE ZXA10 C300{% elif type.value == 'zte_c320' %}ZTE ZXA10 C320{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea id="description" name="description" class="form-textarea" rows="2"
+                              placeholder="Optional description">{{ form_data.description if form_data else (olt.description if olt else '') }}</textarea>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">Connection Settings (Telnet)</h4>
+                
+                <div class="alert alert-warning mb-3">
+                    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <span>ZTE OLT uses Telnet. Ensure your network is secure.</span>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ip_address" class="form-label">IP Address *</label>
+                        <input type="text" id="ip_address" name="ip_address" class="form-input" 
+                               value="{{ form_data.ip_address if form_data else (olt.ip_address if olt else '') }}"
+                               placeholder="e.g., 192.168.1.1" required
+                               pattern="^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cli_port" class="form-label">Telnet Port *</label>
+                        <input type="number" id="cli_port" name="cli_port" class="form-input" 
+                               value="{{ form_data.cli_port if form_data else (olt.cli_port if olt else '23') }}"
+                               min="1" max="65535" required>
+                        <small class="form-hint">Default: 23</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">CLI Credentials</h4>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="cli_username" class="form-label">Username *</label>
+                        <input type="text" id="cli_username" name="cli_username" class="form-input" 
+                               value="{{ form_data.cli_username if form_data else (olt.cli_username if olt else '') }}"
+                               placeholder="CLI username" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="cli_password" class="form-label">Password {% if mode == 'add' %}*{% endif %}</label>
+                        <input type="password" id="cli_password" name="cli_password" class="form-input" 
+                               placeholder="{% if mode == 'edit' %}Leave blank to keep current{% else %}CLI password{% endif %}"
+                               {% if mode == 'add' %}required{% endif %}>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h4 class="form-section-title">SNMP v2c Settings</h4>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="snmp_ro_community" class="form-label">SNMP RO Community {% if mode == 'add' %}*{% endif %}</label>
+                        <input type="password" id="snmp_ro_community" name="snmp_ro_community" class="form-input" 
+                               placeholder="{% if mode == 'edit' %}Leave blank to keep current{% else %}e.g., public{% endif %}"
+                               {% if mode == 'add' %}required{% endif %}>
+                        <small class="form-hint">Read-only community for monitoring</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snmp_rw_community" class="form-label">SNMP RW Community</label>
+                        <input type="password" id="snmp_rw_community" name="snmp_rw_community" class="form-input" 
+                               placeholder="{% if mode == 'edit' %}Leave blank to keep current{% else %}Optional{% endif %}">
+                        <small class="form-hint">Read-write for maintenance (Admin only)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="snmp_port" class="form-label">SNMP Port *</label>
+                        <input type="number" id="snmp_port" name="snmp_port" class="form-input" 
+                               value="{{ form_data.snmp_port if form_data else (olt.snmp_port if olt else '161') }}"
+                               min="1" max="65535" required>
+                        <small class="form-hint">Default: 161</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    {% if mode == 'add' %}Add OLT{% else %}Save Changes{% endif %}
+                </button>
+                <a href="/olt" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if mode == 'add' %}
+<!-- SNMP Setup Helper -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">SNMP Setup Commands</h3>
+        <span class="badge badge-info">Copy-Paste Helper</span>
+    </div>
+    <div class="card-body">
+        <p class="text-muted mb-3">Configure SNMP on your ZTE OLT:</p>
+        
+        <div class="snmp-setup-section">
+            <h5>SNMP Read-Only Community (Required)</h5>
+            <div class="code-block-wrapper">
+                <pre class="code-block" id="snmp-ro-cmd">snmp-server community public view AllView ro</pre>
+                <button class="btn btn-sm btn-outline copy-btn" onclick="copyToClipboard('snmp-ro-cmd')">Copy</button>
+            </div>
+        </div>
+        
+        <div class="snmp-setup-section mt-3">
+            <h5>SNMP Read-Write Community (Optional)</h5>
+            <div class="code-block-wrapper">
+                <pre class="code-block" id="snmp-rw-cmd">snmp-server community private view AllView rw</pre>
+                <button class="btn btn-sm btn-outline copy-btn" onclick="copyToClipboard('snmp-rw-cmd')">Copy</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<style>
+.form-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.form-section:last-of-type {
+    border-bottom: none;
+}
+
+.form-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.snmp-setup-section h5 {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.code-block-wrapper {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.code-block-wrapper .code-block {
+    flex: 1;
+    margin: 0;
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+}
+
+.code-block-wrapper .copy-btn {
+    white-space: nowrap;
+}
+</style>
+
+<script>
+function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).textContent;
+    navigator.clipboard.writeText(text).then(function() {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.classList.add('btn-success');
+        setTimeout(function() {
+            btn.textContent = originalText;
+            btn.classList.remove('btn-success');
+        }, 2000);
+    });
+}
+</script>
+{% endblock %}

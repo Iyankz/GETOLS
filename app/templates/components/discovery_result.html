@@ -1,0 +1,56 @@
+{% if not success %}
+<div class="alert alert-error">
+    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <span>Discovery failed: {{ error }}</span>
+</div>
+{% elif discovered_onus|length == 0 %}
+<div class="alert alert-warning">
+    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <span>No unconfigured ONUs found on this OLT.</span>
+</div>
+{% else %}
+<div class="alert alert-success">
+    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    <span>Found {{ discovered_onus|length }} unconfigured ONU(s)</span>
+</div>
+
+<div class="table-responsive">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>PON Port</th>
+                <th>ONU ID</th>
+                <th>Serial Number</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for onu in discovered_onus %}
+            <tr>
+                <td><code>{{ onu.pon_port }}</code></td>
+                <td>{{ onu.onu_id }}</td>
+                <td><code>{{ onu.serial_number }}</code></td>
+                <td>{{ onu.onu_type }}</td>
+                <td>
+                    <span class="badge badge-warning">{{ onu.status }}</span>
+                </td>
+                <td>
+                    <a href="/onu/provision?olt_id={{ olt.id }}&pon_port={{ onu.pon_port }}&onu_id={{ onu.onu_id }}&serial_number={{ onu.serial_number }}" 
+                       class="btn btn-sm btn-primary">
+                        Provision
+                    </a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}

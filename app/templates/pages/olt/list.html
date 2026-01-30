@@ -1,0 +1,118 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}OLT Management - GETOLS{% endblock %}
+
+{% block page_title %}OLT Management{% endblock %}
+
+{% block header_actions %}
+{% if user.can_manage_olt() %}
+<a href="/olt/add" class="btn btn-primary btn-sm">
+    <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    Add OLT
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Configured OLTs</h3>
+        <span class="badge">{{ olts|length }} total</span>
+    </div>
+    <div class="card-body">
+        {% if olts %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>IP Address</th>
+                        <th>Connection</th>
+                        <th>Status</th>
+                        <th>CLI</th>
+                        <th>SNMP</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for olt in olts %}
+                    <tr>
+                        <td>
+                            <a href="/olt/{{ olt.id }}" class="table-link">{{ olt.name }}</a>
+                            {% if olt.description %}
+                            <br><small class="text-muted">{{ olt.description[:50] }}{% if olt.description|length > 50 %}...{% endif %}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ olt.type_display }}</td>
+                        <td><code>{{ olt.ip_address }}:{{ olt.cli_port }}</code></td>
+                        <td>
+                            <span class="badge badge-warning" title="Telnet connection">Telnet</span>
+                        </td>
+                        <td>
+                            {% if not olt.is_enabled %}
+                            <span class="badge badge-secondary">Disabled</span>
+                            {% elif olt.last_test_cli_success and olt.last_test_snmp_success %}
+                            <span class="badge badge-success">Online</span>
+                            {% elif olt.last_test_cli_success is none %}
+                            <span class="badge badge-warning">Not Tested</span>
+                            {% else %}
+                            <span class="badge badge-danger">Error</span>
+                            {% endif %}
+                        </td>
+                        <td id="cli-status-{{ olt.id }}">
+                            {% if olt.last_test_cli_success is none %}
+                            <span class="text-muted">-</span>
+                            {% elif olt.last_test_cli_success %}
+                            <span class="text-success">✓</span>
+                            {% else %}
+                            <span class="text-danger">✗</span>
+                            {% endif %}
+                        </td>
+                        <td id="snmp-status-{{ olt.id }}">
+                            {% if olt.last_test_snmp_success is none %}
+                            <span class="text-muted">-</span>
+                            {% elif olt.last_test_snmp_success %}
+                            <span class="text-success">✓</span>
+                            {% else %}
+                            <span class="text-danger">✗</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="/olt/{{ olt.id }}" class="btn btn-sm btn-outline" title="View Details">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                    </svg>
+                                </a>
+                                {% if user.can_manage_olt() %}
+                                <a href="/olt/{{ olt.id }}/edit" class="btn btn-sm btn-outline" title="Edit">
+                                    <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                    </svg>
+                                </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: 1rem; opacity: 0.5;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+            </svg>
+            <p>No OLTs configured yet.</p>
+            {% if user.can_manage_olt() %}
+            <a href="/olt/add" class="btn btn-primary">Add Your First OLT</a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
