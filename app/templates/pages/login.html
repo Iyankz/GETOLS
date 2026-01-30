@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - GETOLS</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/img/favicon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="login-page">
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <img src="/static/img/logo.png" alt="GETOLS" class="login-logo">
+                <p class="login-subtitle">Gateway for Extended OLT Services</p>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-error">
+                <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+            
+            <form method="post" action="/login" class="login-form">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input 
+                        type="text" 
+                        id="username" 
+                        name="username" 
+                        class="form-input" 
+                        placeholder="Enter your username"
+                        value="{{ username if username else '' }}"
+                        required 
+                        autofocus
+                    >
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block">
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="login-actions">
+                <button type="button" class="btn-link" onclick="showResetPasswordHelp()">
+                    Forgot Password?
+                </button>
+            </div>
+            
+            <div class="login-footer">
+                <p>GETOLS v1.0.1</p>
+                <p class="login-credits">
+                    Built with ❤️ & ☕ by 
+                    <a href="https://Iyankz.github.io" target="_blank">Iyankz and Brother</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Reset Password Help Modal -->
+    <div id="reset-password-modal" class="modal" style="display: none;">
+        <div class="modal-backdrop" onclick="hideResetPasswordHelp()"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3 class="modal-title">Reset Password</h3>
+                <button class="modal-close" onclick="hideResetPasswordHelp()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">To reset your password, run the following command on the server terminal:</p>
+                
+                <div class="code-block-wrapper">
+                    <pre class="code-block" id="reset-cmd">sudo getols reset-password &lt;username&gt;</pre>
+                    <button class="btn btn-sm btn-outline copy-btn" onclick="copyResetCommand()">
+                        Copy
+                    </button>
+                </div>
+                
+                <p class="text-muted mt-3 small">
+                    <strong>Example:</strong><br>
+                    <code>sudo getols reset-password admin</code>
+                </p>
+                
+                <div class="alert alert-info mt-3">
+                    <svg class="alert-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>Contact your system administrator if you don't have server access.</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="hideResetPasswordHelp()">Got it</button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .login-actions {
+            text-align: center;
+            margin-top: 1rem;
+        }
+        
+        .btn-link {
+            background: none;
+            border: none;
+            color: var(--primary-blue);
+            cursor: pointer;
+            font-size: 0.875rem;
+            padding: 0;
+            text-decoration: underline;
+        }
+        
+        .btn-link:hover {
+            color: var(--primary-green);
+        }
+        
+        .code-block-wrapper {
+            display: flex;
+            gap: 0.5rem;
+            align-items: stretch;
+        }
+        
+        .code-block-wrapper .code-block {
+            flex: 1;
+            margin: 0;
+            padding: 0.75rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        
+        .copy-btn {
+            white-space: nowrap;
+        }
+    </style>
+    
+    <script>
+        function showResetPasswordHelp() {
+            document.getElementById('reset-password-modal').style.display = 'flex';
+        }
+        
+        function hideResetPasswordHelp() {
+            document.getElementById('reset-password-modal').style.display = 'none';
+        }
+        
+        function copyResetCommand() {
+            const cmd = 'sudo getols reset-password <username>';
+            navigator.clipboard.writeText(cmd).then(function() {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.classList.add('btn-success');
+                setTimeout(function() {
+                    btn.textContent = originalText;
+                    btn.classList.remove('btn-success');
+                }, 2000);
+            });
+        }
+        
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                hideResetPasswordHelp();
+            }
+        });
+    </script>
+</body>
+</html>
