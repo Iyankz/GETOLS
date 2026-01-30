@@ -1,3 +1,0 @@
-"""
-GETOLS CLI Module
-"""
