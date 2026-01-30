@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/GETOLS%20Logo.png" alt="GETOLS Logo" width="400">
+  <img src="assets/logo.png" alt="GETOLS Logo" width="400">
 </div>
 
 <div align="center">
