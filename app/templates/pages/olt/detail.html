@@ -1,0 +1,312 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}{{ olt.name }} - GETOLS{% endblock %}
+
+{% block page_title %}OLT: {{ olt.name }}{% endblock %}
+
+{% block header_actions %}
+{% if user.can_manage_olt() %}
+<a href="/olt/{{ olt.id }}/edit" class="btn btn-outline btn-sm">Edit</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="detail-grid">
+    <!-- OLT Info Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">OLT Information</h3>
+            <span class="badge {% if olt.is_enabled %}badge-success{% else %}badge-secondary{% endif %}">
+                {% if olt.is_enabled %}Enabled{% else %}Disabled{% endif %}
+            </span>
+        </div>
+        <div class="card-body">
+            <dl class="detail-list">
+                <div class="detail-item">
+                    <dt>Name</dt>
+                    <dd>{{ olt.name }}</dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Type</dt>
+                    <dd>{{ olt.type_display }}</dd>
+                </div>
+                <div class="detail-item">
+                    <dt>IP Address</dt>
+                    <dd><code>{{ olt.ip_address }}</code></dd>
+                </div>
+                <div class="detail-item">
+                    <dt>Connection</dt>
+                    <dd>
+                        {{ olt.connection_type.value|upper }} (Port {{ olt.cli_port }})
+                        {% if olt.is_telnet %}
+                        <span class="badge badge-warning" style="margin-left: 0.5rem;">Insecure</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="detail-item">
+                    <dt>SNMP Port</dt>
+                    <dd>{{ olt.snmp_port }}</dd>
+                </div>
+                {% if olt.description %}
+                <div class="detail-item">
+                    <dt>Description</dt>
+                    <dd>{{ olt.description }}</dd>
+                </div>
+                {% endif %}
+                <div class="detail-item">
+                    <dt>Created</dt>
+                    <dd>{{ olt.created_at|datetime }}</dd>
+                </div>
+            </dl>
+        </div>
+        {% if user.can_manage_olt() %}
+        <div class="card-footer">
+            {% if olt.is_enabled %}
+            <form method="post" action="/olt/{{ olt.id }}/disable" style="display: inline;">
+                <button type="submit" class="btn btn-outline btn-sm">Disable OLT</button>
+            </form>
+            {% else %}
+            <form method="post" action="/olt/{{ olt.id }}/enable" style="display: inline;">
+                <button type="submit" class="btn btn-success btn-sm">Enable OLT</button>
+            </form>
+            {% endif %}
+            
+            <form method="post" action="/olt/{{ olt.id }}/delete" style="display: inline; margin-left: 0.5rem;"
+                  onsubmit="return confirm('Are you sure you want to delete this OLT? This action cannot be undone.');">
+                <button type="submit" class="btn btn-danger btn-sm">Delete OLT</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Connection Tests Card -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Connection Tests</h3>
+        </div>
+        <div class="card-body">
+            <div class="test-grid">
+                <!-- RO Test -->
+                <div class="test-item">
+                    <div class="test-header">
+                        <span class="test-name">CLI Read-Only</span>
+                        <span class="test-status" id="ro-status">
+                            {% if olt.last_test_ro_success is none %}
+                            <span class="badge badge-secondary">Not Tested</span>
+                            {% elif olt.last_test_ro_success %}
+                            <span class="badge badge-success">Pass</span>
+                            {% else %}
+                            <span class="badge badge-danger">Fail</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if olt.last_test_ro %}
+                    <div class="test-time">Last: {{ olt.last_test_ro|datetime }}</div>
+                    {% endif %}
+                    {% if user.can_manage_olt() %}
+                    <button class="btn btn-sm btn-outline mt-2" 
+                            hx-post="/olt/{{ olt.id }}/test/ro" 
+                            hx-target="#ro-result"
+                            hx-indicator="#ro-loading">
+                        <span id="ro-loading" class="htmx-indicator">Testing...</span>
+                        <span>Test RO Connection</span>
+                    </button>
+                    <div id="ro-result" class="mt-2"></div>
+                    {% endif %}
+                </div>
+                
+                <!-- RW Test -->
+                <div class="test-item">
+                    <div class="test-header">
+                        <span class="test-name">CLI Read-Write</span>
+                        <span class="test-status" id="rw-status">
+                            {% if olt.last_test_rw_success is none %}
+                            <span class="badge badge-secondary">Not Tested</span>
+                            {% elif olt.last_test_rw_success %}
+                            <span class="badge badge-success">Pass</span>
+                            {% else %}
+                            <span class="badge badge-danger">Fail</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if olt.last_test_rw %}
+                    <div class="test-time">Last: {{ olt.last_test_rw|datetime }}</div>
+                    {% endif %}
+                    {% if user.can_manage_olt() %}
+                    <button class="btn btn-sm btn-outline mt-2" 
+                            hx-post="/olt/{{ olt.id }}/test/rw" 
+                            hx-target="#rw-result"
+                            hx-indicator="#rw-loading">
+                        <span id="rw-loading" class="htmx-indicator">Testing...</span>
+                        <span>Test RW Connection</span>
+                    </button>
+                    <div id="rw-result" class="mt-2"></div>
+                    {% endif %}
+                </div>
+                
+                <!-- SNMP Test -->
+                <div class="test-item">
+                    <div class="test-header">
+                        <span class="test-name">SNMP v2c</span>
+                        <span class="test-status" id="snmp-status">
+                            {% if olt.last_test_snmp_success is none %}
+                            <span class="badge badge-secondary">Not Tested</span>
+                            {% elif olt.last_test_snmp_success %}
+                            <span class="badge badge-success">Pass</span>
+                            {% else %}
+                            <span class="badge badge-danger">Fail</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    {% if olt.last_test_snmp %}
+                    <div class="test-time">Last: {{ olt.last_test_snmp|datetime }}</div>
+                    {% endif %}
+                    {% if user.can_manage_olt() %}
+                    <button class="btn btn-sm btn-outline mt-2" 
+                            hx-post="/olt/{{ olt.id }}/test/snmp" 
+                            hx-target="#snmp-result"
+                            hx-indicator="#snmp-loading">
+                        <span id="snmp-loading" class="htmx-indicator">Testing...</span>
+                        <span>Test SNMP Connection</span>
+                    </button>
+                    <div id="snmp-result" class="mt-2"></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h3 class="card-title">Quick Actions</h3>
+    </div>
+    <div class="card-body">
+        <div class="quick-actions">
+            {% if user.can_discover() %}
+            <a href="/onu/discovery?olt_id={{ olt.id }}" class="quick-action">
+                <div class="quick-action-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <span>Discover ONUs</span>
+            </a>
+            {% endif %}
+            
+            <a href="/onu?olt_id={{ olt.id }}" class="quick-action">
+                <div class="quick-action-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <span>View ONUs</span>
+            </a>
+            
+            <a href="/onu/monitoring?olt_id={{ olt.id }}" class="quick-action">
+                <div class="quick-action-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                    </svg>
+                </div>
+                <span>Monitoring</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+}
+
+.detail-list {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.detail-item {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+}
+
+.detail-item dt {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.detail-item dd {
+    color: var(--text-primary);
+}
+
+.test-grid {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.test-item {
+    padding: 1rem;
+    background-color: var(--bg-darker);
+    border-radius: var(--radius-md);
+}
+
+.test-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.test-name {
+    font-weight: 500;
+}
+
+.test-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.quick-action {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background-color: var(--bg-darker);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    transition: all var(--transition-fast);
+}
+
+.quick-action:hover {
+    background-color: var(--bg-card-hover);
+    border-color: var(--border-light);
+}
+
+.quick-action-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--primary-gradient);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quick-action-icon svg {
+    width: 20px;
+    height: 20px;
+    color: white;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}ONU Discovery - GETOLS{% endblock %}
+
+{% block page_title %}ONU Discovery{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Discover Unconfigured ONUs</h3>
+    </div>
+    <div class="card-body">
+        <form id="discovery-form" class="discovery-form">
+            <div class="form-row">
+                <div class="form-group" style="flex: 1;">
+                    <label for="olt_id" class="form-label">Select OLT</label>
+                    <select id="olt_id" name="olt_id" class="form-select" required>
+                        <option value="">Choose an OLT...</option>
+                        {% for olt in olts %}
+                        <option value="{{ olt.id }}" {% if selected_olt and selected_olt.id == olt.id %}selected{% endif %}>
+                            {{ olt.name }} ({{ olt.ip_address }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group" style="align-self: flex-end;">
+                    <button type="submit" class="btn btn-primary"
+                            hx-post="/onu/discovery/run"
+                            hx-target="#discovery-results"
+                            hx-include="#olt_id"
+                            hx-indicator="#discovery-loading">
+                        <svg class="htmx-indicator" id="discovery-loading" width="16" height="16" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.3"/>
+                            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite"/>
+                            </path>
+                        </svg>
+                        Run Discovery
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <div id="discovery-results" class="mt-4">
+            <!-- Results will be loaded here via HTMX -->
+            <div class="empty-state">
+                <svg width="64" height="64" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="margin-bottom: 1rem; opacity: 0.5;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <p>Select an OLT and click "Run Discovery" to find unconfigured ONUs.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.discovery-form {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+@media (max-width: 768px) {
+    .discovery-form {
+        flex-direction: column;
+    }
+    
+    .discovery-form .form-group {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
