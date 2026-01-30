@@ -1,1 +1,0 @@
-GETOLS Architecture bilingual placeholder
